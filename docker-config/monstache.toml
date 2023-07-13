@@ -1,0 +1,4 @@
+mongo-url = "mongodb://mongo1:27017,mongo2:27018/?replicaSet=rs0"
+elasticsearch-urls = ["http://elasticsearch:9200"]
+direct-read-namespaces = ["*"]
+change-stream-namespaces = ["*"]

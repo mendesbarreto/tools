@@ -1,0 +1,130 @@
+version: "3"
+services:
+  mongo1:
+    container_name: localmongo1
+    image: mongo:6
+    volumes:
+      - ./mongo/data/db:/data/db
+      - ./docker-config/mongodb-setup.sh:/docker-entrypoint-initdb.d/mongodb-setup.sh
+      - ./docker-config/mongodb.conf:/etc/mongodb.conf
+    ports:
+      - 27017:27017
+    restart: always
+    entrypoint: ["/usr/bin/mongod", "-f", "/etc/mongodb.conf", "--replSet", "rs0"]
+    depends_on:
+      mongo2:
+        condition: service_healthy
+    networks:
+      - localnetwork
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 20s
+      retries: 3
+
+  mongo2:
+    container_name: localmongo2
+    image: mongo:6
+    volumes:
+      - ./mongo/data2:/data/db
+      - ./docker-config/mongodb.conf:/etc/mongodb.conf
+    ports:
+      - 27018:27017
+    restart: always
+    command: ["--config", "etc/mongodb.conf", "--replSet", "rs0"]
+    networks:
+      - localnetwork
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 20s
+      retries: 3
+
+  redis:
+    container_name: redisc
+    deploy:
+      resources:
+        limits:
+          memory: 300m
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - ./docker-config:/docker-config
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  nats:
+    container_name: natsc
+    deploy:
+      resources:
+        limits:
+          memory: 300m
+    command: ["nats-server", "-js"]
+    volumes:
+      - ./docker-config:/docker-config
+    image: nats:2.9-alpine
+    ports:
+      - "4222:4222"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.1.2
+    container_name: elasticsearchc
+    ports:
+      - "9200:9200"
+    environment:
+      - node.name=es
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx1024m"
+    networks:
+      - localnetwork
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sSf 'http://localhost:9200/_cluster/health?wait_for_status=yellow' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  monstache:
+    container_name: monstachec
+    deploy:
+      resources:
+        limits:
+          memory: 300m
+    depends_on:
+      mongo1:
+        condition: service_healthy
+      mongo2:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - ./docker-config/monstache.toml:/etc/monstache/monstache.toml
+    image: rwynn/monstache:6.7.11
+    restart: unless-stopped
+    command: ["-f", "/etc/monstache/monstache.toml"]
+    ports:
+      - "8080:8080"
+    networks:
+      - localnetwork
+
+  mysql:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345678
+    ports:
+      - 3306:3306
+    networks:
+      - localnetwork
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+
+volumes:
+  localdata:
+    driver: local
+
+networks:
+  localnetwork:
+    driver: bridge
