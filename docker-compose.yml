@@ -2,7 +2,7 @@ version: "3"
 services:
   mongo1:
     container_name: localmongo1
-    image: mongo:6
+    image: mongo:7
     volumes:
       - ./mongo/data/db:/data/db
       - ./docker-config/mongodb-setup.sh:/docker-entrypoint-initdb.d/mongodb-setup.sh
@@ -24,7 +24,7 @@ services:
 
   mongo2:
     container_name: localmongo2
-    image: mongo:6
+    image: mongo:7
     volumes:
       - ./mongo/data2:/data/db
       - ./docker-config/mongodb.conf:/etc/mongodb.conf
@@ -62,12 +62,12 @@ services:
     command: ["nats-server", "-js"]
     volumes:
       - ./docker-config:/docker-config
-    image: nats:2.9-alpine
+    image: nats:2.10-alpine
     ports:
       - "4222:4222"
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.1.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
     container_name: elasticsearchc
     ports:
       - "9200:9200"
