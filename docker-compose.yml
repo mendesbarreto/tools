@@ -67,7 +67,7 @@ services:
       - "4222:4222"
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
     container_name: elasticsearchc
     ports:
       - "9200:9200"
