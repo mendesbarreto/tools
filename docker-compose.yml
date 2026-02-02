@@ -101,7 +101,7 @@ services:
         condition: service_healthy
     volumes:
       - ./docker-config/monstache.toml:/etc/monstache/monstache.toml
-    image: rwynn/monstache:6.7.14
+    image: rwynn/monstache:6.8.0
     restart: unless-stopped
     command: ["-f", "/etc/monstache/monstache.toml"]
     ports:
